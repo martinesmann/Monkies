@@ -19,5 +19,10 @@ namespace Monkies
         {
             Navigation.PushAsync(new CreateMonkeyPage());
         }
+
+        public void SearchBarTextChanged(object sender, TextChangedEventArgs args)
+        {
+            DummyData.Search((sender as SearchBar).Text);
+        }
     }
 }

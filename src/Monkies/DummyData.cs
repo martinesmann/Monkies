@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using Couchbase.Lite;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using Newtonsoft.Json.Linq;
 
 namespace Monkies
 {
@@ -17,8 +18,9 @@ namespace Monkies
 
         public static void Init()
         {
-            //Manager.SharedInstance.GetDatabase("cb").Delete();
-            Manager.SharedInstance.GetDatabase("cb").Changed += DummyData_Changed; ;
+            // reset database to delete all local content to show sync is working.
+            Manager.SharedInstance.GetDatabase("cb").Delete();
+            Manager.SharedInstance.GetDatabase("cb").Changed += DummyData_Changed;
 
             var exsisting =
                 Manager.SharedInstance.GetDatabase("cb")
@@ -48,6 +50,60 @@ namespace Monkies
             }
 
             InitSync();
+
+            InitQuery();
+        }
+
+        private static void InitQuery()
+        {
+            Manager.SharedInstance.GetDatabase("cb")
+                .GetView("search-monkies-advanced")
+                .SetMap((doc, emit) =>
+                {
+                    if (doc.ContainsKey("doc") && doc.ContainsKey("type") && doc["type"].ToString() == "monkey")
+                    {
+                        var item = doc["doc"] as JContainer;
+                        foreach (var prop in item.Children().Where(p => p is JProperty).Cast<JProperty>().Select(p => new { name = p.Name, value = p.Value.ToString().ToLower() }))
+                        {
+                            var v = doc["type"].ToString() + "::" + prop.name;
+                            emit(prop.value, v);
+                        }
+                    }
+                },
+                /* 
+                replace Guid.NewGuid().ToString() with 
+                static string value when not debugging to ensure 
+                that the index is not rebuild on every run!
+                */
+                Guid.NewGuid().ToString());
+        }
+
+        public static void Search(string search)
+        {
+            var query = Manager.SharedInstance.GetDatabase("cb")
+                .GetView("search-monkies-advanced")
+                .CreateQuery();
+
+            query.IndexUpdateMode = IndexUpdateMode.Before;
+            query.StartKey = search.ToLower();
+            query.EndKey = query.StartKey.ToString() + '\uEFFF';
+
+            var results = query
+                .Run()
+                .ToList()
+                .Select(doc => JsonConvert.DeserializeObject<Monkey>(doc.Document.UserProperties["doc"].ToString()))
+                .GroupBy(item => item.Name)
+                .Select(group => group.First());
+
+            Monkies.Clear();
+
+            if (results.Any())
+            {
+                foreach (var monkey in results)
+                {
+                    Monkies.Add(monkey);
+                }
+            }
         }
 
         private static void InitSync()
@@ -76,7 +132,7 @@ namespace Monkies
 
             if (e.IsExternal)
             {
-                Debugger.Break();
+                // Debugger.Break();
                 // this change came from external sync
             }
 

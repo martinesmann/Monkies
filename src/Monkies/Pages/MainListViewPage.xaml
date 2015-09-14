@@ -8,7 +8,7 @@
 
     <StackLayout>
       <!-- Search is not implemented in this version and is only added as a placeholder -->
-      <SearchBar Placeholder="Search" />
+      <SearchBar Placeholder="Search" TextChanged="SearchBarTextChanged" />
 
       <ListView ItemsSource="{Binding .}" >
         <ListView.ItemTemplate>
