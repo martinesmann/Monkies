@@ -53,7 +53,7 @@ namespace Monkies
         private static void InitSync()
         {
             // this is all the code needed to initialize and continue sync'ing with SyncGateway.
-            string syncGAtewayUrl = "http://cbdemo004bizz.cloudapp.net:4984/sync_gateway/";
+            string syncGAtewayUrl = "http://try-cb.cloudapp.net:4984/sync_gateway/";
             string user = "couchbase";
             string pass = "letmein";
 
