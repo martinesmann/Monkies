@@ -85,8 +85,11 @@ namespace Monkies
                 .CreateQuery();
 
             query.IndexUpdateMode = IndexUpdateMode.Before;
-            query.StartKey = search.ToLower();
-            query.EndKey = query.StartKey.ToString() + '\uEFFF';
+            if (!string.IsNullOrEmpty(search))
+            {
+                query.StartKey = search.ToLower();
+                query.EndKey = query.StartKey.ToString() + '\uEFFF';
+            }
 
             var results = query
                 .Run()
